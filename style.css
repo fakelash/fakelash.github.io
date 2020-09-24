@@ -1,0 +1,7 @@
+body {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-family: sans-serif;
+}
