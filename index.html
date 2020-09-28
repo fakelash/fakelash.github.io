@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <title>FAKELASH!</title>
-  <script src='https://www.gstatic.com/firebasejs/7.21.0/firebase-app.js' async></script>
-  <script src='https://www.gstatic.com/firebasejs/7.21.0/firebase-database.js' async></script>
-  <script src='https://www.gstatic.com/firebasejs/7.21.0/firebase-analytics.js' async></script>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js' async></script>
+  <script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+  <script src='https://www.gstatic.com/firebasejs/7.21.0/firebase-app.js' ></script>
+  <script src='https://www.gstatic.com/firebasejs/7.21.0/firebase-database.js' ></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js' ></script>
   
   <link rel='stylesheet' href='style.css'>
   <script src='index.js' async></script>
@@ -22,7 +22,7 @@
   </div>
   <div id='lobby'>
     <h3 id='playercount'></h3>
-    <ul id='players'></ul>
+    <div id='players'></div>
     <p>Waiting for other players...</p>
     <p>To stop accepting new players and begin, click start game!</p>
     <button id='startgame'>Start game</button>
@@ -30,6 +30,22 @@
 
   <div id='game'>
     <h3 id='playercount'></h3>
+    <div id='input'>
+      <h3 id='title'></h3>
+      <h3 id='prompt'></h3>
+      <input id='answer' placeholder='Enter your answer' />
+      <button id='submit'>Submit answer</button>
+      <br /><br />
+      <button id='nextround'></button>
+      <br />
+      <br />
+    </div>
+    <br /><br />
+    <button id='endgame'>End game</button>
   </div>
+  <div id='leaderboard'>
+    
+  </div>
+  
 </body>
 </html>
