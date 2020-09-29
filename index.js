@@ -30,6 +30,7 @@ var round;
 var promptlen = 844; 
 var promptnum = Math.floor(Math.random() * promptlen);
 db.ref('currptnum').set(promptnum);
+var prompts = [];
 var time = 20;
 var thisuser = '';
 var currpt = '';
@@ -37,6 +38,7 @@ var players = 0;
 var playerlist = [];
 $('#lobby').hide();
 $('#game').hide();
+$('#leaderboard').hide();
 
 
 db.ref("running").on("value", ss=>{
@@ -44,6 +46,7 @@ db.ref("running").on("value", ss=>{
   if (status == 1){
     $('#lobby').hide();
     $('#welcome').hide();
+    $('#leaderboard').hide();
     $('#game').show();
   }
 });
@@ -54,6 +57,7 @@ db.ref("start").on("value", ss=>{
   if (status == 1){
     $('#lobby').hide();
     $('#game').hide();
+    $('#leaderboard').hide();
     $('#welcome').show();
     db.ref('round').set(0);
   }
@@ -77,8 +81,7 @@ $('#startlobby').click(()=>{
   playerlist.push(thisuser);
   db.ref('playerlist').set(playerlist);
   db.ref('playercount').set(players);
-  db.ref('players').child(players).set({ 
-    user: thisuser,
+  db.ref('players').child(thisuser).set({ 
     score: 0
   });
   db.ref('start').set(0);
@@ -107,6 +110,7 @@ $('#startgame').click(()=>{
   db.ref('prompts').child(promptnum).once('value', ss=>{
     var tmp = ss.val();
     db.ref('currprompt').set(tmp);
+    prompts.push(tmp);
   });
 
   //update prompt on screen
@@ -145,7 +149,7 @@ $('#submit').click(() =>{
 
 //new round during gameplay, reset db & get new prompt
 $('#nextround').click(()=>{
-  if(round < 4){
+  if(round < 2){  ///////CHANGE THIS AFTER TESTING LEADERBOARD
     //advance round
     round++;
     db.ref('round').set(round);
@@ -159,6 +163,7 @@ $('#nextround').click(()=>{
     db.ref('prompts').child(promptnum).once('value', ss=>{
       var tmp = ss.val();
       db.ref('currprompt').set(tmp);
+      prompts.push(tmp);
     });
     
     //update prompt on screen
@@ -170,7 +175,59 @@ $('#nextround').click(()=>{
     $('#answer').val([]);
   }
   else{
+    console.log('leaderboard time!');
+    /* db.ref('answers').once('value', ss=>{
+      var len = ss.val().len;
+      for(var i = 0; i < len; i++){
+        
+        $('#leaderboard').html(
+          `<h3>Voting</h3>
+          <h3>Prompt: ${ss.val()[i]}</h3>
+          <div id ='responses'></div>`
+        );
+      }
+    }); */
+
+    
+
+    /*$(document).on("click", "a.remove" , function() {
+            $(this).parent().remove();
+        });*/
     db.ref('leaderboard').set(1);
+    
+  }
+})
+
+db.ref('leaderboard').on('value', ss=>{
+  if(ss.val() == 1){
+    var answers = [];
+    db.ref('answers').once('value', ss=>{
+      answers = ss.val();
+      //for testing only
+      console.log('answers: ', answers);
+      $('#leaderboard').append(`<p>${JSON.stringify(answers)}</p>`);
+      //
+      db.ref('players').once('value', ss=>{
+        var plist = ss.val();
+//////FIGURE THIS OUT!!! HOW TO PRINT PROMPTS AND THEN THE USERS" ANSWERS BELOW
+        for(var i = 0; i < prompts.length; i++){
+          $('#leaderboard').append(`<h3>${prompts[i]}</h3>`);
+          db.ref('answers').child(prompts[i]).once('value', ss1=>{
+            var tmp = ss1.val();
+            $('#leaderboard').append(`<p>${JSON.stringify(tmp)}</p>`);
+            for(var j = 0; j < plist.length; j++){
+              $('#leaderboard').append(`<p>${JSON.stringify(plist[j])}</p><br />`);
+              $('#leaderboard').append(`<p>${JSON.stringify(tmp[j])}</p><br />`);
+            }
+            $('#leaderboard').append(`<br />`);
+          });
+        }
+      })
+    });
+    $('#leaderboard').show();
+  }
+  else{
+    $('#leaderboard').html('');
   }
 })
 
@@ -188,8 +245,10 @@ $('#endgame').click(()=>{
   db.ref("currprompt").set("");
   db.ref("currptnum").set(0);
   db.ref("answers").set("");
+  db.ref('leaderboard').set(0);
   db.ref('start').set(1);
   $('#welcome').show();
   $('#lobby').hide();
   $('#game').hide();
+  $('#leaderboard').hide();
 });
