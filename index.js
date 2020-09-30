@@ -66,13 +66,10 @@ $('#startlobby').click(()=>{
   players++;
   
   db.ref('playerlist').once('value', ss=>{
-    console.log('local player:', thisuser);
-    console.log('playerlist', ss.val());
     var tmp = [];
     tmp = ss.val();
     if(tmp){
       tmp.push(thisuser);
-      console.log('updatedplayerlist', tmp);
       db.ref('playerlist').set(tmp);
     }
     else{
@@ -96,10 +93,8 @@ $('#startlobby').click(()=>{
   db.ref('gamepts').on("value", ss => {
     var tmp = ss.val();
     if(tmp){
-      console.log('round', round)
       var curr = tmp[round];
       $('#prompt').html(`${curr}`);
-      console.log(curr);
     }
   });
 
@@ -143,11 +138,9 @@ $('#nextround').click(()=>{
     updatePrompt();
   }
   else{
-    console.log('leaderboard time!');
     db.ref('done').once('value', ss=>{
       var tmpdone = ss.val();
       tmpdone++;
-      console.log('nextround done', tmpdone);
       db.ref('done').set(tmpdone);
       checkDone();
     });
@@ -165,28 +158,36 @@ db.ref('leaderboard').on('value', ss=>{
     db.ref('answers').once('value', ss=>{
       answers = ss.val();
       console.log('answers', answers);
+      console.log('prompts', prompts);
       db.ref('playerlist').once('value', ss=>{
         var plist = ss.val();
         var curr;
-        for(var i = 0; i < prompts.length; i++){
-          curr = prompts[i];
-          db.ref('answers').child(curr).once('value', ss1=>{
+        var codenum = Math.floor(Math.random() * 20);
+        db.ref('answers').once('value', ss1=>{
+          for(var i = 0; i < prompts.length; i++){
+            curr = prompts[i];
             $('#leaderboard').append(
-              `<div class='answerblock'>
-              <h3>${curr}</h3><br />
-              </div>`);
-            var tmp = ss1.val();
+              `<h3>${curr}</h3>
+              <div class='answerblock'></div>`);
+            var tmp = ss1.child(curr).val();
+            console.log('ss1.val', ss1.val());
+            console.log('ss1.child(curr) val', tmp);
             console.log(plist.length);
+            var code = '';
             for(var j = 0; j < plist.length; j++){
+              console.log('j loop');
               var user = plist[j];
+              codenum++;
+              code = user + '' + codenum;
+              console.log('code', code);
               $('.answerblock').append(
-                `<p class='disuser'>${user}</p>
-                <h3 class='disanswer'>${tmp[user].answer}</h3>
-                <button class='vote' onclick='vote(${user})'>vote</button>`);
+                `<h3 class='disanswer'>${tmp[user].answer}</h3>
+                <button class='vote' id=${code}>vote</button>`);
+              document.getElementById(code).addEventListener("click", function(par){vote(user)});
             }
-          });
-        }
-      })
+          }
+        });//ans db
+      });//plist db
     });
     $('#game').hide();
     $('#waitingroom').hide();
@@ -200,6 +201,7 @@ db.ref('leaderboard').on('value', ss=>{
 // game screen -> welcome screen
 // end game, reset db 
 $('#endgame').click(()=>{
+  resetGame();
   resetGame();
   $('#welcome').show();
   $('#lobby').hide();
@@ -226,7 +228,7 @@ function checkDone(){
 }
 
 
-function getGamePrompts(){
+async function getGamePrompts(){
   var i = 0;
   var tmp = [];
   while(i < 4){
@@ -242,16 +244,19 @@ function getGamePrompts(){
           db.ref('gamepts').set(tmp);
         }
         else{
+          prompts.push(newpt);
           db.ref('gamepts').set([newpt]);
         }
       });
     });
     i++;
   }
+  updatePrompt();
 }
 
 function resetGame(){
   round = 0;
+  prompts = [];
   db.ref("running").set(0);
   db.ref("round").set(0);
   db.ref('done').set(0);
@@ -273,7 +278,6 @@ function updatePrompt(){
     if(ss.val()){
       pts = ss.val();
       currpt = pts[round];
-      console.log("currpt",currpt)
       $('#prompt').html(`${pts[round]}`);
       $('#title').html(`round ${round+1}/4`)
     }
@@ -281,9 +285,11 @@ function updatePrompt(){
 }
 
 function vote(user){
+  console.log('vote')
   db.ref('players').child(user).once('value', ss=>{
     var tmp = ss.val().score;
     tmp++;
+    console.log('vote afterscore', tmp);
     db.ref('players').child(user).child('score').set(tmp);
   });
 }
