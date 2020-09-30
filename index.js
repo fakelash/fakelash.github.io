@@ -18,34 +18,23 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 let db = firebase.database();
 
-
-/*
-db.ref("running").set(0);
-db.ref("playercount").set(0);
-db.ref("players").set("");
-*/
-// Set up local & db game environment
-db.ref("start").set(1);
+// Set up local game environment
 var round;
 var promptlen = 844; 
-var promptnum = Math.floor(Math.random() * promptlen);
-db.ref('currptnum').set(promptnum);
+var promptnum; 
 var prompts = [];
-var time = 20;
 var thisuser = '';
 var currpt = '';
 var players = 0;
 $('#lobby').hide();
 $('#game').hide();
+$('#waitingroom').hide();
 $('#leaderboard').hide();
 
 
 db.ref("running").on("value", ss=>{
   let status = ss.val();
   if (status == 1){
-    $('#lobby').hide();
-    $('#welcome').hide();
-    $('#leaderboard').hide();
     $('#game').show();
   }
 });
@@ -57,14 +46,12 @@ db.ref("start").on("value", ss=>{
     $('#lobby').hide();
     $('#game').hide();
     $('#leaderboard').hide();
+    $('#waitingroom').hide();
     $('#welcome').show();
-    db.ref('round').set(0);
   }
 });
 
-/*db.ref("players").child('user').on("value", ss=>{
-  $('#players').append(`<li>${ss.val()}</li>`)
-})*/
+
 if (!($("lobby").is(":hidden"))) { 
   db.ref("playercount").on("value", ss=>{
     players = ss.val();
@@ -98,7 +85,6 @@ $('#startlobby').click(()=>{
     score: 0
   });
   db.ref('start').set(0);
-  db.ref('round').set(0);
 
   $('#welcome').hide();
   $('#lobby').show();
@@ -107,47 +93,34 @@ $('#startlobby').click(()=>{
 
 
 // get current prompt to display on screen
-  db.ref('currprompt').on("value", ss => {
-    currpt = ss.val();
-    $('#prompt').html(`${currpt}`);
-    console.log(currpt);
+  db.ref('gamepts').on("value", ss => {
+    var tmp = ss.val();
+    if(tmp){
+      console.log('round', round)
+      var curr = tmp[round];
+      $('#prompt').html(`${curr}`);
+      console.log(curr);
+    }
   });
 
 
 // lobby -> game screen 
 $('#startgame').click(()=>{
-
   db.ref("running").set(1);
-
-  //get prompt basedon rand num
-  db.ref('prompts').child(promptnum).once('value', ss=>{
-    var tmp = ss.val();
-    db.ref('currprompt').set(tmp);
-    prompts.push(tmp);
-  });
-
-  //update prompt on screen
-  db.ref('currprompt').once("value", ss => {
-    currpt = ss.val();
-    $('#prompt').html(`${currpt}`);
-    console.log(currpt);
-  });
-
-  //set to first round
-  db.ref('round').set(1);
-  db.ref('round').once('value', ss=>{
-    round = ss.val();
-  });
-
-  //page navigation
-  $('#lobby').hide();
-  $('#game').show();
 });
 
-// ensure prompt is displayed while game is running
+// add next round button
 db.ref('running').on('value', ss=>{
   if(ss.val() == 1){
+    //get 4 prompts for game
+    getGamePrompts();
+    updatePrompt();
+    //page navigation
+    $('#lobby').hide();
+    $('#game').show();
+    $('#welcome').hide();
     $('#nextround').html(`next round`);
+    db.ref('running').set(2);
   }
 });
 
@@ -157,73 +130,53 @@ $('#submit').click(() =>{
   db.ref('answers').child(currpt).child(thisuser).set({
     answer: $('#answer').val()
   });
+  
 });
 
-//new round during gameplay, reset db & get new prompt
+//new round during gameplay, get new prompt from list & update screen
 $('#nextround').click(()=>{
+  //advance round
+  round++;
   if(round < 4){ 
-    //advance round
-    round++;
-    db.ref('round').set(round);
-    db.ref('round').once('value', ss=>{
-      round = ss.val();
-    });
-
-    //choose new prompt num
-    promptnum = Math.floor(Math.random() * promptlen);
-    db.ref('currptnum').set(promptnum);
-    db.ref('prompts').child(promptnum).once('value', ss=>{
-      var tmp = ss.val();
-      db.ref('currprompt').set(tmp);
-      prompts.push(tmp);
-    });
-    
-    //update prompt on screen
-    db.ref('currprompt').once("value", ss => {
-      currpt = ss.val();
-      $('#prompt').html(`${currpt}`);
-      console.log(currpt);
-    });
+    //clear input field 
     $('#answer').val([]);
+    updatePrompt();
   }
   else{
     console.log('leaderboard time!');
-    /* db.ref('answers').once('value', ss=>{
-      var len = ss.val().len;
-      for(var i = 0; i < len; i++){
-        
-        $('#leaderboard').html(
-          `<h3>Voting</h3>
-          <h3>Prompt: ${ss.val()[i]}</h3>
-          <div id ='responses'></div>`
-        );
-      }
-    }); */
-
-    
-
-    /*$(document).on("click", "a.remove" , function() {
-            $(this).parent().remove();
-        });*/
-    db.ref('leaderboard').set(1);
-    
+    db.ref('done').once('value', ss=>{
+      var tmpdone = ss.val();
+      tmpdone++;
+      console.log('nextround done', tmpdone);
+      db.ref('done').set(tmpdone);
+      checkDone();
+    });
+    $('#waitingroom').show();
+    $('#game').hide();
   }
+    
+  
 })
 
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
+    console.log('leaderboard');
     var answers = [];
     db.ref('answers').once('value', ss=>{
       answers = ss.val();
+      console.log('answers', answers);
       db.ref('playerlist').once('value', ss=>{
         var plist = ss.val();
-        var playernum = plist.length;
+        var curr;
         for(var i = 0; i < prompts.length; i++){
-          var curr = prompts[i];
+          curr = prompts[i];
           db.ref('answers').child(curr).once('value', ss1=>{
-            $('#leaderboard').append(`<div class='answerblock'></div>`)
-            $('.answerblock').append(`<h3>${curr}</h3><br />`);
+            $('#leaderboard').append(
+              `<div class='answerblock'>
+              <h3>${curr}</h3><br />
+              </div>`);
             var tmp = ss1.val();
+            console.log(plist.length);
             for(var j = 0; j < plist.length; j++){
               var user = plist[j];
               $('.answerblock').append(
@@ -231,12 +184,12 @@ db.ref('leaderboard').on('value', ss=>{
                 <h3 class='disanswer'>${tmp[user].answer}</h3>
                 <button class='vote' onclick='vote(${user})'>vote</button>`);
             }
-            $('#leaderboard').append(`<br />`);
           });
         }
       })
     });
     $('#game').hide();
+    $('#waitingroom').hide();
     $('#leaderboard').show();
   }
   else{
@@ -247,8 +200,57 @@ db.ref('leaderboard').on('value', ss=>{
 // game screen -> welcome screen
 // end game, reset db 
 $('#endgame').click(()=>{
-  console.log('click')
-  currprompt = '';
+  resetGame();
+  $('#welcome').show();
+  $('#lobby').hide();
+  $('#game').hide();
+  $('#leaderboard').hide();
+});
+
+
+function checkDone(){
+  db.ref('playercount').once('value', ss=>{
+    console.log('playercount on');
+    if(ss.val()){
+      var playernum = ss.val();
+      db.ref('done').once('value', ss1=>{
+        var tmpdone = ss1.val();
+        console.log('tmpdone', tmpdone);
+        console.log('playernum', playernum);
+        if(tmpdone == playernum){
+          db.ref('leaderboard').set(1);
+        }
+      });
+    }
+  });
+}
+
+
+function getGamePrompts(){
+  var i = 0;
+  var tmp = [];
+  while(i < 4){
+    promptnum = Math.floor(Math.random() * promptlen);
+    db.ref('prompts').child(promptnum).once('value', ss=>{
+      var newpt = ss.val();
+      db.ref('gamepts').once('value', ss1=>{
+        var tmp = [];
+        tmp = ss1.val();
+        if(tmp){
+          tmp.push(newpt);
+          prompts.push(newpt);
+          db.ref('gamepts').set(tmp);
+        }
+        else{
+          db.ref('gamepts').set([newpt]);
+        }
+      });
+    });
+    i++;
+  }
+}
+
+function resetGame(){
   round = 0;
   db.ref("running").set(0);
   db.ref("round").set(0);
@@ -260,9 +262,28 @@ $('#endgame').click(()=>{
   db.ref("currptnum").set(0);
   db.ref("answers").set("");
   db.ref('leaderboard').set(0);
+  db.ref('gamepts').set([]);
   db.ref('start').set(1);
-  $('#welcome').show();
-  $('#lobby').hide();
-  $('#game').hide();
-  $('#leaderboard').hide();
-});
+}
+
+
+function updatePrompt(){
+  console.log('updating...');
+  db.ref('gamepts').on("value", ss => {
+    if(ss.val()){
+      pts = ss.val();
+      currpt = pts[round];
+      console.log("currpt",currpt)
+      $('#prompt').html(`${pts[round]}`);
+      $('#title').html(`round ${round+1}/4`)
+    }
+  });
+}
+
+function vote(user){
+  db.ref('players').child(user).once('value', ss=>{
+    var tmp = ss.val().score;
+    tmp++;
+    db.ref('players').child(user).child('score').set(tmp);
+  });
+}
