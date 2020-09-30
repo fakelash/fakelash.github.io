@@ -22,7 +22,6 @@ let db = firebase.database();
 var round;
 var promptlen = 844; 
 var promptnum; 
-var prompts = [];
 var thisuser = '';
 var currpt = '';
 var players = 0;
@@ -149,56 +148,9 @@ $('#nextround').click(()=>{
   }
     
   
-})
-/*
-db.ref('leaderboard').on('value', ss=>{
-  if(ss.val() == 1){
-    console.log('leaderboard');
-    var answers = [];
-    db.ref('answers').once('value', ss=>{
-      answers = ss.val();
-      console.log('answers', answers);
-      console.log('prompts', prompts);
-      db.ref('playerlist').once('value', ss=>{
-        var plist = ss.val();
-        var curr;
-        var codenum = Math.floor(Math.random() * 20);
-        db.ref('answers').once('value', ss1=>{
-          for(var i = 0; i < prompts.length; i++){
-            curr = prompts[i];
-            $('#leaderboard').append(
-              `<h3>${curr}</h3>
-              <div class='answerblock'></div>`);
-            var tmp = ss1.child(curr).val();
-            console.log('ss1.val', ss1.val());
-            console.log('ss1.child(curr) val', tmp);
-            console.log(plist.length);
-            var code = '';
-            for(var j = 0; j < plist.length; j++){
-              console.log('j loop');
-              var user = plist[j];
-              codenum++;
-              code = user + '' + codenum;
-              console.log('code', code);
-              $('.answerblock').append(
-                `<h3 class='disanswer'>${tmp[user].answer}</h3>
-                <button class='vote' id=${code}>vote</button>`);
-              document.getElementById(code).addEventListener("click", function(par){vote(user)});
-            }
-          }
-        });//ans db
-      });//plist db
-    });
-    $('#game').hide();
-    $('#waitingroom').hide();
-    $('#leaderboard').show();
-  }
-  else{
-    $('#leaderboard').html('');
-  }
 });
-*/
 
+//leaderboard
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
     db.ref('playerlist').once('value', ss1=>{
@@ -211,13 +163,17 @@ db.ref('leaderboard').on('value', ss=>{
           for(pt in gamepts){
             var tmppt = gamepts[pt];
             var ans = answers[tmppt];
-            $('#leaderboard').append(`<h2>${tmppt}</h2>`);
+            var code = Math.floor(Math.random() * 1000);
+            $('#leaderboard').append(`<h2>${tmppt}</h2><div class='container' id=${code}></div>`);
             for(usr in ans){
-              $('#leaderboard').append(
-                `<h3>${ans[usr].answer}</h3>
-                <p>${usr}</p>
-                <button class='vote'>vote</button>`
+              $('#'+code).append(
+                `<div class='answer'>
+                  <h3 class='ans'>${ans[usr].answer}</h3>
+                  <button id=${usr+code} class='vote' title=${usr}>vote</button>
+                </div>`
               );
+              var tmpusr = usr;
+              document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
             }
           }
         });
@@ -261,9 +217,8 @@ function checkDone(){
   });
 }
 
-
+//generate 4 prompts for game
 function getGamePrompts(){
-  prompts = [];
   var i = 0;
   var tmp = [];
   while(i < 4){
@@ -275,11 +230,9 @@ function getGamePrompts(){
         tmp = ss1.val();
         if(tmp){
           tmp.push(newpt);
-          prompts.push(newpt);
           db.ref('gamepts').set(tmp);
         }
         else{
-          prompts.push(newpt);
           db.ref('gamepts').set([newpt]);
         }
       });
@@ -291,7 +244,6 @@ function getGamePrompts(){
 
 function resetGame(){
   round = 0;
-  prompts = [];
   db.ref("running").set(0);
   db.ref("round").set(0);
   db.ref('done').set(0);
@@ -319,8 +271,9 @@ function updatePrompt(){
   });
 }
 
-function vote(user){
-  console.log('vote')
+function vote(par){
+  console.log('vote', par.target.title)
+  var user = par.target.title
   db.ref('players').child(user).once('value', ss=>{
     var tmp = ss.val().score;
     tmp++;
