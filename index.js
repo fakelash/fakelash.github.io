@@ -150,7 +150,7 @@ $('#nextround').click(()=>{
     
   
 })
-
+/*
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
     console.log('leaderboard');
@@ -196,7 +196,41 @@ db.ref('leaderboard').on('value', ss=>{
   else{
     $('#leaderboard').html('');
   }
-})
+});
+*/
+
+db.ref('leaderboard').on('value', ss=>{
+  if(ss.val() == 1){
+    db.ref('playerlist').once('value', ss1=>{
+      var plist = ss1.val();
+      var plen = plist.length;
+      db.ref('answers').once('value', ss2=>{
+        var answers = ss2.val();
+        db.ref('gamepts').once('value', ss3=>{
+          var gamepts = ss3.val();
+          for(pt in gamepts){
+            var tmppt = gamepts[pt];
+            var ans = answers[tmppt];
+            $('#leaderboard').append(`<h2>${tmppt}</h2>`);
+            for(usr in ans){
+              $('#leaderboard').append(
+                `<h3>${ans[usr].answer}</h3>
+                <p>${usr}</p>
+                <button class='vote'>vote</button>`
+              );
+            }
+          }
+        });
+      });
+    });
+    $('#game').hide();
+    $('#waitingroom').hide();
+    $('#leaderboard').show();
+  }
+  else{
+    $('#leaderboard').html('');
+  }
+});
 
 // game screen -> welcome screen
 // end game, reset db 
@@ -228,7 +262,8 @@ function checkDone(){
 }
 
 
-async function getGamePrompts(){
+function getGamePrompts(){
+  prompts = [];
   var i = 0;
   var tmp = [];
   while(i < 4){
