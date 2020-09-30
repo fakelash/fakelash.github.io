@@ -76,3 +76,18 @@ button:focus {
 #answer{
   margin-top: 20px;
 }
+
+#endgame{
+  width: 110px;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  transform: translate(-50%, -50%);
+  margin: 0 auto;
+}
+
+.leaderboard{
+  display: flex;
+  justify-content: space-evenly;
+}
+

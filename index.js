@@ -161,7 +161,7 @@ $('#submit').click(() =>{
 
 //new round during gameplay, reset db & get new prompt
 $('#nextround').click(()=>{
-  if(round < 2){  ///////CHANGE THIS AFTER TESTING LEADERBOARD
+  if(round < 4){ 
     //advance round
     round++;
     db.ref('round').set(round);
@@ -215,30 +215,28 @@ db.ref('leaderboard').on('value', ss=>{
     var answers = [];
     db.ref('answers').once('value', ss=>{
       answers = ss.val();
-      //for testing only
-      console.log('answers: ', answers);
-      $('#leaderboard').append(`<p>answers: ${JSON.stringify(answers)}</p>`);
-      //
       db.ref('playerlist').once('value', ss=>{
         var plist = ss.val();
-        $('#leaderboard').append(`<h3>plsit:${JSON.stringify(ss.val())}</h3>`);
-//////FIGURE THIS OUT!!! HOW TO PRINT PROMPTS AND THEN THE USERS" ANSWERS BELOW
+        var playernum = plist.length;
         for(var i = 0; i < prompts.length; i++){
-          $('#leaderboard').append(`<h3>prompt [${i}]${prompts[i]}</h3>`);
-          db.ref('answers').child(prompts[i]).once('value', ss1=>{
+          var curr = prompts[i];
+          db.ref('answers').child(curr).once('value', ss1=>{
+            $('#leaderboard').append(`<div class='answerblock'></div>`)
+            $('.answerblock').append(`<h3>${curr}</h3><br />`);
             var tmp = ss1.val();
-            $('#leaderboard').append(`<p>prompt[${i}].value ${JSON.stringify(tmp)}</p>`);
-            $('#leaderboard').append(`<p>plist.len= ${plist.length}</p>`);
             for(var j = 0; j < plist.length; j++){
-              $('#leaderboard').append(`<p>plist[j]: ${plist[j]}</p>`);
-              $('#leaderboard').append(`<p>tmp.plist[j]: ${tmp.JSON.stringify(plist[j]).answer}</p><br />`);
-              //$('#leaderboard').append(`<p>tmp answer: ${JSON.stringify(tmp[j].answer)}</p><br />`);
+              var user = plist[j];
+              $('.answerblock').append(
+                `<p class='disuser'>${user}</p>
+                <h3 class='disanswer'>${tmp[user].answer}</h3>
+                <button class='vote' onclick='vote(${user})'>vote</button>`);
             }
             $('#leaderboard').append(`<br />`);
           });
         }
       })
     });
+    $('#game').hide();
     $('#leaderboard').show();
   }
   else{
@@ -254,6 +252,7 @@ $('#endgame').click(()=>{
   round = 0;
   db.ref("running").set(0);
   db.ref("round").set(0);
+  db.ref('done').set(0);
   db.ref("playercount").set(0);
   db.ref("players").set("");
   db.ref("playerlist").set([]);
