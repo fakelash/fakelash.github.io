@@ -38,6 +38,7 @@ db.ref("start").on("value", ss=>{
     $('#game').hide();
     $('#leaderboard').hide();
     $('#waitingroom').hide();
+    $('#scores').hide();
     $('#welcome').show();
   }
 });
@@ -53,23 +54,21 @@ if (!($("lobby").is(":hidden"))) {
 
 // welcome page (enter username, join game) -> lobby (waiting for other users)
 $('#startlobby').click(()=>{
-  startLobby();
   addPlayer();
   db.ref('start').set(0);
-  $('#welcome').hide();
+  $('#welcome').hide(); 
   $('#lobby').show();
-
 });
 
 
 // get current prompt to display on screen
-  db.ref('gamepts').on("value", ss => {
-    var tmp = ss.val();
-    if(tmp){
-      var curr = tmp[round];
-      $('#prompt').html(`${curr}`);
-    }
-  });
+db.ref('gamepts').on("value", ss => {
+  var tmp = ss.val();
+  if(tmp){
+    var curr = tmp[round];
+    $('#prompt').html(`${curr}`);
+  }
+});
 
 
 // lobby -> game screen 
@@ -119,8 +118,19 @@ $('#nextround').click(()=>{
 //leaderboard
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
-    db.ref('playerlist').once('value', ss1=>{
+    db.ref('players').once('value', ss1=>{
       var plist = ss1.val();
+      for(player in plist){
+        var p = plist[player];
+        console.log('leaderboard p ', p)
+        console.log('player', player);
+        $('#scores').append(
+          `<div id=${player}>
+            <p>${player}: </p>
+              <p id=${player + 'score'}>${p.score}</p>
+            
+          </div>`);
+      }
       db.ref('answers').once('value', ss2=>{
         var answers = ss2.val();
         db.ref('gamepts').once('value', ss3=>{
@@ -129,7 +139,12 @@ db.ref('leaderboard').on('value', ss=>{
             var tmppt = gamepts[pt];
             var ans = answers[tmppt];
             var code = Math.floor(Math.random() * 1000);
-            $('#leaderboard').append(`<h2>${tmppt}</h2><div class='container' id=${code}></div>`);
+            $('#leaderboard').append(
+              `<div class='ptanswer'>
+                <h2>${tmppt}</h2>
+                <div class='container' id=${code}>
+                </div>
+              </div>`);
             for(usr in ans){
               $('#'+code).append(
                 `<div class='answer'>
@@ -138,6 +153,7 @@ db.ref('leaderboard').on('value', ss=>{
                 </div>`
               );
               document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
+              
             }
           }
         });
@@ -146,16 +162,25 @@ db.ref('leaderboard').on('value', ss=>{
     $('#game').hide();
     $('#waitingroom').hide();
     $('#leaderboard').show();
+    $('scores').show();
   }
   else{
     $('#leaderboard').html('');
   }
 });
 
+//keep scores updated
+db.ref('players').on('value', ss=>{
+  var players = ss.val();
+  for(player in players){
+    var p = players[player];
+    $('#'+player+'score').html(`${p.score}`);
+  }
+})
+
 // game screen -> welcome screen
 // end game, reset db 
 $('#endgame').click(()=>{
-  resetGame();
   resetGame();
   $('#welcome').show();
   $('#lobby').hide();
@@ -240,24 +265,12 @@ function resetGame(){
   db.ref('start').set(1);
 }
 
-function startLobby(){
-  db.ref("round").set(0);
-  db.ref('done').set(0);
-  db.ref("currprompt").set("");
-  db.ref("currptnum").set(0);
-  db.ref("answers").set("");
-  db.ref('leaderboard').set(0);
-  db.ref('gamepts').set([]);
-}
-
 
 function updatePrompt(){
   db.ref('gamepts').on("value", ss => {
     if(ss.val()){
       pts = ss.val();
-      console.log('gamepts', pts);
       currpt = pts[round];
-      console.log('currpt', currpt);
       $('#prompt').html(`${pts[round]}`);
       $('#title').html(`round ${round+1}/4`)
     }

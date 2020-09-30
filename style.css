@@ -104,10 +104,13 @@ button:focus {
 
 .ans{
   margin: 10px !important;
-
 }
 
 .leaderboard{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: justify;
   bottom: 35px;
 }
 
@@ -117,5 +120,22 @@ button:focus {
   justify-content: center;
   text-align: justify;
   margin-bottom: 60px;
+}
+
+.ptanswer{
+  display: flex;
+  margin: 20px;
+  justify-content: center;
+  text-align: center;
+  flex-wrap: wrap;
+  padding: 15px !important;
+}
+
+.scores{
+  margin: 20px;
+  justify-content: center;
+  text-align: center;
+  flex-wrap: wrap;
+  padding: 15px !important;
 }
 
