@@ -1,5 +1,5 @@
 /*
- * Quilash Prompts compiled from Quiplash XL by friendly Steam users Alphaeus & Raven_of_Nevaria
+ * Quiplash Prompts compiled from Quiplash XL by friendly Steam users Alphaeus & Raven_of_Nevaria
  * Sources: https://steamcommunity.com/app/397460/discussions/0/451850468372557278/
  *          https://drive.google.com/file/d/0BxNI_DUQ9QZZWU1pMVZ4VzV0dW8/view 
  */
@@ -19,7 +19,7 @@ firebase.initializeApp(firebaseConfig);
 let db = firebase.database();
 
 // Set up local game environment
-var round;
+var round = 0;
 var promptlen = 844; 
 var promptnum; 
 var thisuser = '';
@@ -29,14 +29,6 @@ $('#lobby').hide();
 $('#game').hide();
 $('#waitingroom').hide();
 $('#leaderboard').hide();
-
-
-db.ref("running").on("value", ss=>{
-  let status = ss.val();
-  if (status == 1){
-    $('#game').show();
-  }
-});
 
 
 db.ref("start").on("value", ss=>{
@@ -61,27 +53,9 @@ if (!($("lobby").is(":hidden"))) {
 
 // welcome page (enter username, join game) -> lobby (waiting for other users)
 $('#startlobby').click(()=>{
-  thisuser = $('#username').val();
-  players++;
-  
-  db.ref('playerlist').once('value', ss=>{
-    var tmp = [];
-    tmp = ss.val();
-    if(tmp){
-      tmp.push(thisuser);
-      db.ref('playerlist').set(tmp);
-    }
-    else{
-      db.ref('playerlist').set([thisuser]);
-    }
-    
-  });
-  db.ref('playercount').set(players);
-  db.ref('players').child(thisuser).set({ 
-    score: 0
-  });
+  startLobby();
+  addPlayer();
   db.ref('start').set(0);
-
   $('#welcome').hide();
   $('#lobby').show();
 
@@ -103,10 +77,10 @@ $('#startgame').click(()=>{
   db.ref("running").set(1);
 });
 
-// add next round button
+// update game state
 db.ref('running').on('value', ss=>{
   if(ss.val() == 1){
-    //get 4 prompts for game
+    //get 4 prompts for game & update screen
     getGamePrompts();
     updatePrompt();
     //page navigation
@@ -119,21 +93,15 @@ db.ref('running').on('value', ss=>{
 });
 
 
-// submit answer to prompt to db
-$('#submit').click(() =>{
+//new round during gameplay
+//sumbit answer to db, get new prompt from list & update screen
+$('#nextround').click(()=>{
+  round++;
   db.ref('answers').child(currpt).child(thisuser).set({
     answer: $('#answer').val()
   });
-  
-});
-
-//new round during gameplay, get new prompt from list & update screen
-$('#nextround').click(()=>{
-  //advance round
-  round++;
+  $('#answer').val([]);
   if(round < 4){ 
-    //clear input field 
-    $('#answer').val([]);
     updatePrompt();
   }
   else{
@@ -146,8 +114,6 @@ $('#nextround').click(()=>{
     $('#waitingroom').show();
     $('#game').hide();
   }
-    
-  
 });
 
 //leaderboard
@@ -155,7 +121,6 @@ db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
     db.ref('playerlist').once('value', ss1=>{
       var plist = ss1.val();
-      var plen = plist.length;
       db.ref('answers').once('value', ss2=>{
         var answers = ss2.val();
         db.ref('gamepts').once('value', ss3=>{
@@ -172,7 +137,6 @@ db.ref('leaderboard').on('value', ss=>{
                   <button id=${usr+code} class='vote' title=${usr}>vote</button>
                 </div>`
               );
-              var tmpusr = usr;
               document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
             }
           }
@@ -199,16 +163,34 @@ $('#endgame').click(()=>{
   $('#leaderboard').hide();
 });
 
+function addPlayer(){
+  thisuser = $('#username').val();
+  players++;
+  
+  db.ref('playerlist').once('value', ss=>{
+    var tmp = [];
+    tmp = ss.val();
+    if(tmp){
+      tmp.push(thisuser);
+      db.ref('playerlist').set(tmp);
+    }
+    else{
+      db.ref('playerlist').set([thisuser]);
+    }
+  });
+  db.ref('playercount').set(players);
+  db.ref('players').child(thisuser).set({ 
+    score: 0
+  });
+}
+
 
 function checkDone(){
   db.ref('playercount').once('value', ss=>{
-    console.log('playercount on');
     if(ss.val()){
       var playernum = ss.val();
       db.ref('done').once('value', ss1=>{
         var tmpdone = ss1.val();
-        console.log('tmpdone', tmpdone);
-        console.log('playernum', playernum);
         if(tmpdone == playernum){
           db.ref('leaderboard').set(1);
         }
@@ -258,13 +240,24 @@ function resetGame(){
   db.ref('start').set(1);
 }
 
+function startLobby(){
+  db.ref("round").set(0);
+  db.ref('done').set(0);
+  db.ref("currprompt").set("");
+  db.ref("currptnum").set(0);
+  db.ref("answers").set("");
+  db.ref('leaderboard').set(0);
+  db.ref('gamepts').set([]);
+}
+
 
 function updatePrompt(){
-  console.log('updating...');
   db.ref('gamepts').on("value", ss => {
     if(ss.val()){
       pts = ss.val();
+      console.log('gamepts', pts);
       currpt = pts[round];
+      console.log('currpt', currpt);
       $('#prompt').html(`${pts[round]}`);
       $('#title').html(`round ${round+1}/4`)
     }
@@ -272,12 +265,10 @@ function updatePrompt(){
 }
 
 function vote(par){
-  console.log('vote', par.target.title)
-  var user = par.target.title
+  var user = par.target.title;
   db.ref('players').child(user).once('value', ss=>{
     var tmp = ss.val().score;
     tmp++;
-    console.log('vote afterscore', tmp);
     db.ref('players').child(user).child('score').set(tmp);
   });
 }
