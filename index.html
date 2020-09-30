@@ -8,24 +8,26 @@
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js' ></script>
   
   <link rel='stylesheet' href='style.css'>
+  <link rel="stylesheet"
+  href="https://fonts.googleapis.com/css?family=Bangers">
   <script src='index.js' async></script>
   
   
   
 </head>
 <body>
-  <h1>Fake-lash</h1>
+<h1 id='header'>Fakelash!</h1>
   <div id='welcome'>
-    <h3>Answer prompts with your friends!</h3>
-    <input type='text' id='username' placeholder='Enter a username' />
-    <button id='startlobby'>Join Game</button>
+    <h3>answer prompts with your friends!</h3>
+    <input type='text' id='username' placeholder='enter a username' />
+    <button id='startlobby'>join game</button>
   </div>
   <div id='lobby'>
     <h3 id='playercount'></h3>
     <div id='players'></div>
-    <p>Waiting for other players...</p>
-    <p>To stop accepting new players and begin, click start game!</p>
-    <button id='startgame'>Start game</button>
+    <p>waiting for other players...</p>
+    <p>to stop accepting new players and begin, click start game!</p>
+    <button id='startgame'>start game</button>
   </div>
 
   <div id='game'>
@@ -34,14 +36,14 @@
       <h3 id='title'></h3>
       <h3 id='prompt'></h3>
       <input id='answer' placeholder='Enter your answer' />
-      <button id='submit'>Submit answer</button>
+      <button id='submit'>submit answer</button>
       <br /><br />
       <button id='nextround'></button>
       <br />
       <br />
     </div>
     <br /><br />
-    <button id='endgame'>End game</button>
+    <button id='endgame'>end game</button>
   </div>
   <div id='leaderboard'>
     

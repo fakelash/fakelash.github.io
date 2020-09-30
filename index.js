@@ -35,7 +35,6 @@ var time = 20;
 var thisuser = '';
 var currpt = '';
 var players = 0;
-var playerlist = [];
 $('#lobby').hide();
 $('#game').hide();
 $('#leaderboard').hide();
@@ -69,7 +68,7 @@ db.ref("start").on("value", ss=>{
 if (!($("lobby").is(":hidden"))) { 
   db.ref("playercount").on("value", ss=>{
     players = ss.val();
-    $('#playercount').html(`Currently ${players} players`);
+    $('#playercount').html(`currently ${players} players`);
   });
 }
 
@@ -78,8 +77,22 @@ if (!($("lobby").is(":hidden"))) {
 $('#startlobby').click(()=>{
   thisuser = $('#username').val();
   players++;
-  playerlist.push(thisuser);
-  db.ref('playerlist').set(playerlist);
+  
+  db.ref('playerlist').once('value', ss=>{
+    console.log('local player:', thisuser);
+    console.log('playerlist', ss.val());
+    var tmp = [];
+    tmp = ss.val();
+    if(tmp){
+      tmp.push(thisuser);
+      console.log('updatedplayerlist', tmp);
+      db.ref('playerlist').set(tmp);
+    }
+    else{
+      db.ref('playerlist').set([thisuser]);
+    }
+    
+  });
   db.ref('playercount').set(players);
   db.ref('players').child(thisuser).set({ 
     score: 0
@@ -96,7 +109,7 @@ $('#startlobby').click(()=>{
 // get current prompt to display on screen
   db.ref('currprompt').on("value", ss => {
     currpt = ss.val();
-    $('#prompt').html(`Prompt: ${currpt}`);
+    $('#prompt').html(`${currpt}`);
     console.log(currpt);
   });
 
@@ -116,7 +129,7 @@ $('#startgame').click(()=>{
   //update prompt on screen
   db.ref('currprompt').once("value", ss => {
     currpt = ss.val();
-    $('#prompt').html(`Prompt: ${currpt}`);
+    $('#prompt').html(`${currpt}`);
     console.log(currpt);
   });
 
@@ -134,8 +147,7 @@ $('#startgame').click(()=>{
 // ensure prompt is displayed while game is running
 db.ref('running').on('value', ss=>{
   if(ss.val() == 1){
-    $('#title').html(`Welcome to round ${round}, ${thisuser}!`);
-    $('#nextround').html(`Round ${round+1}`);
+    $('#nextround').html(`next round`);
   }
 });
 
@@ -169,7 +181,7 @@ $('#nextround').click(()=>{
     //update prompt on screen
     db.ref('currprompt').once("value", ss => {
       currpt = ss.val();
-      $('#prompt').html(`Prompt: ${currpt}`);
+      $('#prompt').html(`${currpt}`);
       console.log(currpt);
     });
     $('#answer').val([]);
@@ -205,19 +217,22 @@ db.ref('leaderboard').on('value', ss=>{
       answers = ss.val();
       //for testing only
       console.log('answers: ', answers);
-      $('#leaderboard').append(`<p>${JSON.stringify(answers)}</p>`);
+      $('#leaderboard').append(`<p>answers: ${JSON.stringify(answers)}</p>`);
       //
-      db.ref('players').once('value', ss=>{
+      db.ref('playerlist').once('value', ss=>{
         var plist = ss.val();
+        $('#leaderboard').append(`<h3>plsit:${JSON.stringify(ss.val())}</h3>`);
 //////FIGURE THIS OUT!!! HOW TO PRINT PROMPTS AND THEN THE USERS" ANSWERS BELOW
         for(var i = 0; i < prompts.length; i++){
-          $('#leaderboard').append(`<h3>${prompts[i]}</h3>`);
+          $('#leaderboard').append(`<h3>prompt [${i}]${prompts[i]}</h3>`);
           db.ref('answers').child(prompts[i]).once('value', ss1=>{
             var tmp = ss1.val();
-            $('#leaderboard').append(`<p>${JSON.stringify(tmp)}</p>`);
+            $('#leaderboard').append(`<p>prompt[${i}].value ${JSON.stringify(tmp)}</p>`);
+            $('#leaderboard').append(`<p>plist.len= ${plist.length}</p>`);
             for(var j = 0; j < plist.length; j++){
-              $('#leaderboard').append(`<p>${JSON.stringify(plist[j])}</p><br />`);
-              $('#leaderboard').append(`<p>${JSON.stringify(tmp[j])}</p><br />`);
+              $('#leaderboard').append(`<p>plist[j]: ${plist[j]}</p>`);
+              $('#leaderboard').append(`<p>tmp.plist[j]: ${tmp.JSON.stringify(plist[j]).answer}</p><br />`);
+              //$('#leaderboard').append(`<p>tmp answer: ${JSON.stringify(tmp[j].answer)}</p><br />`);
             }
             $('#leaderboard').append(`<br />`);
           });
