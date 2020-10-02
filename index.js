@@ -233,7 +233,6 @@ function getGamePrompts(){
 
 function resetGame(){
   round = 0;
-  $('#scores').html('');
   db.ref("running").set(0);
   db.ref("round").set(0);
   db.ref('done').set(0);
@@ -250,6 +249,7 @@ function resetGame(){
 
 
 function startLeaderboard(){
+  $('#scores').html('');
   db.ref('answers').once('value', ss2=>{
     var answers = ss2.val();
     db.ref('gamepts').once('value', ss3=>{
