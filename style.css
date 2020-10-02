@@ -19,6 +19,8 @@ h2{
   letter-spacing: 3px;
 }
 
+
+
 input{
   border: 0;
   outline: 0;
@@ -130,6 +132,11 @@ button:focus {
   justify-content: center;
   text-align: justify;
   margin-bottom: 60px;
+}
+
+.disabledbutton {
+  pointer-events: none;
+  opacity: 0.4;
 }
 
 .leaderboard{

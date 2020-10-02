@@ -123,46 +123,8 @@ $('#nextround').click(()=>{
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
     round = 0;
-    db.ref('players').once('value', ss1=>{
-      var plist = ss1.val();
-      for(player in plist){
-        var p = plist[player];
-        $('#scores').append(
-          `<div id=${player} class='score'>
-            <h3>${player}: </h3>
-            <h3 id=${player + 'score'}>${p.score}</h3>
-          </div>`);
-        $('#scorecontainer').show();
-      }
-      db.ref('answers').once('value', ss2=>{
-        var answers = ss2.val();
-        db.ref('gamepts').once('value', ss3=>{
-          var gamepts = ss3.val();
-          for(pt in gamepts){
-            var tmppt = gamepts[pt];
-            var ans = answers[tmppt];
-            if(ans){
-              var code = Math.floor(Math.random() * 1000);
-              $('#leaderboard').append(
-                `<div class='ptanswer'>
-                  <h2>${tmppt}</h2>
-                  <div class='container' id=${code}>
-                  </div>
-                </div>`);
-              for(usr in ans){
-                $('#'+code).append(
-                  `<div class='answer'>
-                    <h3 class='ans'>${ans[usr].answer}</h3>
-                    <button id=${usr+code} class='vote' title=${usr}>vote</button>
-                  </div>`
-                );
-                document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
-              }
-            }
-          }
-        });
-      });
-    });
+    addScores();
+    startLeaderboard();
     $('#game').hide();
     $('#waitingroom').hide();
     $('#leaderboard').show();
@@ -214,6 +176,22 @@ function addPlayer(){
 }
 
 
+function addScores(){
+  db.ref('players').once('value', ss1=>{
+    var plist = ss1.val();
+    for(player in plist){
+      var p = plist[player];
+      $('#scores').append(
+        `<div id=${player} class='score'>
+          <h3>${player}: </h3>
+          <h3 id=${player + 'score'}>${p.score}</h3>
+        </div>`);
+      $('#scorecontainer').show();
+    }
+  });
+}
+
+
 function checkDone(){
   db.ref('playercount').once('value', ss=>{
     if(ss.val()){
@@ -255,6 +233,7 @@ function getGamePrompts(){
 
 function resetGame(){
   round = 0;
+  $('#scores').html('');
   db.ref("running").set(0);
   db.ref("round").set(0);
   db.ref('done').set(0);
@@ -267,6 +246,38 @@ function resetGame(){
   db.ref('leaderboard').set(0);
   db.ref('gamepts').set([]);
   db.ref('start').set(1);
+}
+
+
+function startLeaderboard(){
+  db.ref('answers').once('value', ss2=>{
+    var answers = ss2.val();
+    db.ref('gamepts').once('value', ss3=>{
+      var gamepts = ss3.val();
+      for(pt in gamepts){
+        var tmppt = gamepts[pt];
+        var ans = answers[tmppt];
+        if(ans){
+          var code = Math.floor(Math.random() * (999 - 100 + 1) + 100);
+          $('#leaderboard').append(
+            `<div class='ptanswer'>
+              <h2>${tmppt}</h2>
+              <div class='container' id=${code}>
+              </div>
+            </div>`);
+          for(usr in ans){
+            $('#'+code).append(
+              `<div class='answer'>
+                <h3 class='ans'>${ans[usr].answer}</h3>
+                <button id=${usr+code} class='vote' title=${usr}>vote</button>
+              </div>`
+            );
+            document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
+          }
+        }
+      }
+    });
+  });
 }
 
 
@@ -283,6 +294,11 @@ function updatePrompt(){
 
 function vote(par){
   var user = par.target.title;
+  var id = par.target.id;
+  console.log('id', id);
+  id = id.substring(id.length - 3, id.length);
+  console.log('subid', id);
+  $('#'+id).addClass("disabledbutton");
   db.ref('players').child(user).once('value', ss=>{
     var tmp = ss.val().score;
     tmp++;
