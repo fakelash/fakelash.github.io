@@ -36,6 +36,7 @@ db.ref("start").on("value", ss=>{
   let status = ss.val();
   if (status == 1){
     round = 0;
+    $('#scores').html('');
     $('#lobby').hide();
     $('#game').hide();
     $('#leaderboard').hide();
@@ -131,6 +132,7 @@ db.ref('leaderboard').on('value', ss=>{
     $('#scorecontainer').show();
   }
   else{
+    $('#scores').html('');
     $('#leaderboard').html('');
   }
 });
@@ -249,7 +251,6 @@ function resetGame(){
 
 
 function startLeaderboard(){
-  $('#scores').html('');
   db.ref('answers').once('value', ss2=>{
     var answers = ss2.val();
     db.ref('gamepts').once('value', ss3=>{
