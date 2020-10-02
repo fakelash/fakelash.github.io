@@ -29,16 +29,18 @@ $('#lobby').hide();
 $('#game').hide();
 $('#waitingroom').hide();
 $('#leaderboard').hide();
+$('#scorecontainer').hide();
 
 
 db.ref("start").on("value", ss=>{
   let status = ss.val();
   if (status == 1){
+    round = 0;
     $('#lobby').hide();
     $('#game').hide();
     $('#leaderboard').hide();
     $('#waitingroom').hide();
-    $('#scores').hide();
+    $('#scorecontainer').hide();
     $('#welcome').show();
   }
 });
@@ -54,6 +56,7 @@ if (!($("lobby").is(":hidden"))) {
 
 // welcome page (enter username, join game) -> lobby (waiting for other users)
 $('#startlobby').click(()=>{
+  round = 0;
   addPlayer();
   db.ref('start').set(0);
   $('#welcome').hide(); 
@@ -104,6 +107,7 @@ $('#nextround').click(()=>{
     updatePrompt();
   }
   else{
+    round = 0;
     db.ref('done').once('value', ss=>{
       var tmpdone = ss.val();
       tmpdone++;
@@ -118,18 +122,17 @@ $('#nextround').click(()=>{
 //leaderboard
 db.ref('leaderboard').on('value', ss=>{
   if(ss.val() == 1){
+    round = 0;
     db.ref('players').once('value', ss1=>{
       var plist = ss1.val();
       for(player in plist){
         var p = plist[player];
-        console.log('leaderboard p ', p)
-        console.log('player', player);
         $('#scores').append(
-          `<div id=${player}>
-            <p>${player}: </p>
-              <p id=${player + 'score'}>${p.score}</p>
-            
+          `<div id=${player} class='score'>
+            <h3>${player}: </h3>
+            <h3 id=${player + 'score'}>${p.score}</h3>
           </div>`);
+        $('#scorecontainer').show();
       }
       db.ref('answers').once('value', ss2=>{
         var answers = ss2.val();
@@ -138,22 +141,23 @@ db.ref('leaderboard').on('value', ss=>{
           for(pt in gamepts){
             var tmppt = gamepts[pt];
             var ans = answers[tmppt];
-            var code = Math.floor(Math.random() * 1000);
-            $('#leaderboard').append(
-              `<div class='ptanswer'>
-                <h2>${tmppt}</h2>
-                <div class='container' id=${code}>
-                </div>
-              </div>`);
-            for(usr in ans){
-              $('#'+code).append(
-                `<div class='answer'>
-                  <h3 class='ans'>${ans[usr].answer}</h3>
-                  <button id=${usr+code} class='vote' title=${usr}>vote</button>
-                </div>`
-              );
-              document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
-              
+            if(ans){
+              var code = Math.floor(Math.random() * 1000);
+              $('#leaderboard').append(
+                `<div class='ptanswer'>
+                  <h2>${tmppt}</h2>
+                  <div class='container' id=${code}>
+                  </div>
+                </div>`);
+              for(usr in ans){
+                $('#'+code).append(
+                  `<div class='answer'>
+                    <h3 class='ans'>${ans[usr].answer}</h3>
+                    <button id=${usr+code} class='vote' title=${usr}>vote</button>
+                  </div>`
+                );
+                document.getElementById(usr+code).addEventListener('click', (usr)=>vote(usr));
+              }
             }
           }
         });
@@ -162,7 +166,7 @@ db.ref('leaderboard').on('value', ss=>{
     $('#game').hide();
     $('#waitingroom').hide();
     $('#leaderboard').show();
-    $('scores').show();
+    $('#scorecontainer').show();
   }
   else{
     $('#leaderboard').html('');
@@ -284,4 +288,5 @@ function vote(par){
     tmp++;
     db.ref('players').child(user).child('score').set(tmp);
   });
+  $('#scorecontainer').show();
 }

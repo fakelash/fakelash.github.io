@@ -60,6 +60,19 @@ button:focus {
   outline: none;
 }
 
+#answer{
+  margin-top: 20px;
+}
+
+#endgame{
+  width: 110px;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  transform: translate(-50%, -50%);
+  margin: 0 auto;
+}
+
 #header{
   font-family: Bangers, serif;
 }
@@ -79,17 +92,26 @@ button:focus {
   color: white;
 }
 
-#answer{
-  margin-top: 20px;
+#scores{
+  display:flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: justify;
 }
 
-#endgame{
-  width: 110px;
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  transform: translate(-50%, -50%);
+#scorecontainer{
   margin: 0 auto;
+  margin-top: 20px;
+  background-color: rgba(114, 123, 168, 0.5);
+  color: white;
+  border-radius: 30px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+
+.ans{
+  margin: 10px !important;
 }
 
 .answer{
@@ -102,18 +124,6 @@ button:focus {
   color: white;
 }
 
-.ans{
-  margin: 10px !important;
-}
-
-.leaderboard{
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  text-align: justify;
-  bottom: 35px;
-}
-
 .container{
   display:flex;
   flex-wrap: wrap;
@@ -122,20 +132,20 @@ button:focus {
   margin-bottom: 60px;
 }
 
+.leaderboard{
+  bottom: 35px;
+  justify-content: center;
+  text-align: justify;
+}
+
 .ptanswer{
-  display: flex;
   margin: 20px;
   justify-content: center;
   text-align: center;
-  flex-wrap: wrap;
-  padding: 15px !important;
 }
 
-.scores{
-  margin: 20px;
+.score{
+  margin: 10px;
   justify-content: center;
   text-align: center;
-  flex-wrap: wrap;
-  padding: 15px !important;
 }
-
